@@ -3,6 +3,7 @@
 
 #include "rbtree.h"
 #include "utils.h"
+#include "event.h"
 #include <iostream>
 
 
@@ -21,17 +22,17 @@ extern pthread_mutex_t *event_timer_mutex;
 extern rbtree_t event_timer_rbtree;
 
 static inline void
-event_del_timer() {
+event_del_timer(event_t *ev) {
     std::cout << "event del timer" << std::endl;
 
     mutex_lock(event_timer_mutex);
 
-    rbtree_delete(&event_timer_rbtree, );
+    rbtree_delete(&event_timer_rbtree, &ev->timer);
 
-    mutex_unlock(event_timer_mutex);
-
-    
+    mutex_unlock(event_timer_mutex);    
 }
+
+
 
 
 #endif /*_TIMER_H_*/
