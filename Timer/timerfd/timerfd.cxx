@@ -1,4 +1,17 @@
 #include "timerfd.h"
+#include <iostream>
+#include <sys/epoll.h>
+#include <sys/timerfd.h>
+#include <time.h>
+#include <thread>
+#include <unistd.h>
+#include <sys/syscall.h>
+
+unsigned long gettid()
+{
+    return (unsigned long)syscall(SYS_gettid); 
+}
+
 
 Timer::Timer()
 {
@@ -9,24 +22,34 @@ Timer::Timer()
 
 Timer::~Timer() 
 {
-
+    if (is_start) {
+        stop();
+        is_start = false;
+    }
 }
 
 int Timer::start()
 {
+    is_start = true;
     return create_epoll();
 }
 
-int Timer::stop()
+void Timer::stop()
 {
+    for (auto it = timer_map.begin(); it != timer_map.end(); it++) {
+        close(it->first);
+    }
 
+    close(epoll_fd);
 }
 
 int Timer::add_timer(uint32_t interval, callback _cb, void * _arg)
 {
+    std::cout << "add_timer thread id = " << gettid() << std::endl;
     timer_event tevent;
-    struct itimespec timervalue;
+    struct itimerspec timervalue;
     struct timespec now;
+    struct epoll_event event;
     int timerfd;
     int ret;
     
@@ -43,7 +66,7 @@ int Timer::add_timer(uint32_t interval, callback _cb, void * _arg)
 
     //set expire time after the first expireation
     timervalue.it_interval.tv_sec = interval;
-    timervalue.it_interval.tv_nsrc = 0;
+    timervalue.it_interval.tv_nsec = 0;
 
     //create timerfd
     timerfd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
@@ -52,41 +75,81 @@ int Timer::add_timer(uint32_t interval, callback _cb, void * _arg)
         return timerfd;
     }
 
+    //start timer
+    ret = timerfd_settime(timerfd, 0, &timervalue, NULL);
+    if (ret == -1) {
+        std::cout << "timerfd_settime error: " << ret << std::endl;
+        return ret;
+    }
+
     tevent.timer_fd = timerfd;
     tevent.arg = _arg;
     tevent.cb = _cb;
 
+    //use epoll_ctl
+    event.events = EPOLLIN | EPOLLET;
+    event.data.fd = timerfd;
+    
+    ret = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timerfd, &event);
+    if (ret != 0) {
+        std::cout << "epoll_ctl error: " << ret << std::endl;
+        return -1;
+    }
+
     timer_map.insert(std::make_pair(timerfd, tevent));
 
-    //use epoll_ctl
+    return timerfd;
 }
 
-int Timer::remove_timer()
+int Timer::remove_timer(int timerfd)
 {
+    int ret;
+    
+    if (timerfd < 0) {
+        std::cout << "arg is error" << std::endl;
+        return -1;
+    }
 
+    auto it = timer_map.find(timerfd);
+    if (it == timer_map.end()) {
+        std::cout << "there is nosucktimerfd in timerfdMap" << std::endl;
+        return 0;
+    }
+
+    ret = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, timerfd, 0);
+    if (ret != 0) {
+        std::cout << "epoll_ctl error: " << ret << std::endl;
+        return -1;
+    }
+
+    timer_map.erase(it);
+    close(timerfd);
+
+    return 0;
 }
 
 int Timer::create_epoll()
-{
-    int ret;
-    struct epoll_event event;
-    
+{    
     epoll_fd = epoll_create(1);
     if (epoll_fd < 0) {
         std::cout << "epoll_create error: " << errno << std::endl;
         return -errno;
     }
-
-    std::thread thd(timer_loop);
-    thd.detch();
+    std::thread* thd = new std::thread(&Timer::timer_loop, this);
+    thd->detach();
     
+    return 0;
 }
 
-void* Timer::timer_loop()
+void Timer::timer_loop()
 {
+    std::cout << "timer_loop thread id = " << gettid() << std::endl;
     int n;
-    int ret;
+    int tmp = 10;
+    int eventfd;
+    uint64_t buf;
     struct epoll_event events[MAXEVENTS];
+    callback func;
 
     while (true) {
         n = epoll_wait(epoll_fd, events, MAXEVENTS, EPOLLWAITTIME);
@@ -99,8 +162,17 @@ void* Timer::timer_loop()
         } else {
             for (int i = 0; i < n; i++) {
                 if (events[i].events & EPOLLIN) {
-                    //判断events[i].data.fd是否在timer_map中
-                    //调用对应的回调函数
+                    eventfd = events[i].data.fd;
+                    read(eventfd, &buf, sizeof(uint64_t));
+                    auto it = timer_map.find(eventfd);
+                    if (it == timer_map.end()) {
+                        std::cout << "eventfd: " << eventfd << " is not match in the map" << std::endl;
+                        continue;
+                    }
+                    func = it->second.cb;
+                    if (func) {
+                        func(it->second.arg);
+                    }
                 }
             }
         }

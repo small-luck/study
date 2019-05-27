@@ -72,7 +72,8 @@ int main(int argc, char const *argv[])
     }
 
     while (true) {
-        int n = epoll_wait(epoll_fd, events, EPOLLNUM, 0);
+        int n = epoll_wait(epoll_fd, events, EPOLLNUM, 1000);
+        std::cout << "n = " << n << std::endl;
         if (n > 0) {
             for (int i = 0; i < n; i++) {
                 if (events[i].events & EPOLLIN) {
