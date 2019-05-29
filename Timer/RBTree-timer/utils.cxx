@@ -1,5 +1,7 @@
 #include "utils.h"
 #include <iostream>
+#include <sys/time.h>
+#include <pthread.h>
 
 void mutex_init(pthread_mutex_t * mutex)
 {
@@ -48,4 +50,21 @@ int mutex_unlock(pthread_mutex_t *mutex)
     }
 
     return 0;
+}
+
+uint64_t get_current_msec(void)
+{
+    struct timeval now;
+    uint64_t sec;
+    uint64_t msec;
+    uint64_t now_msec;
+
+    gettimeofday(&now, NULL);
+
+    sec = now.tv_sec;
+    msec = now.tv_usec / 1000;
+
+    now_msec = sec * 1000 + msec;
+
+    return now_msec;
 }
