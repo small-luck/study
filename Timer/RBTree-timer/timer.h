@@ -24,14 +24,15 @@ static inline void
 event_del_timer(event_t *ev) {
     std::cout << "event del timer" << std::endl;
 
-
+    mutex_lock(event_timer_mutex);
     rbtree_delete(&event_timer_rbtree, &ev->timer);
-
+    mutex_unlock(event_timer_mutex);
+    
     ev->timer.left = NULL;
     ev->timer.right = NULL;
     ev->timer.parent = NULL;
     
-    ev->set = 0;
+    ev->timer_set = 0;
 }
 
 static inline void 
@@ -45,7 +46,7 @@ event_add_timer(event_t *ev, uint64_t timer)
 
     key = now + timer;
 
-    if (ev->set) {
+    if (ev->timer_set) {
         
         /*
          * Use a previous timer value if difference between it and a new
@@ -59,12 +60,21 @@ event_add_timer(event_t *ev, uint64_t timer)
             return;
         }
 
-        
+        //else delete node
+        event_del_timer(ev);
     }
+
+    std::cout << "add a timer, key = " << key << std::endl;
+    
+    ev->timer.key = key;
+
+    mutex_lock(event_timer_mutex);
+    rbtree_insert(&event_timer_rbtree, &ev->timer);
+    mutex_unlock(event_timer_mutex);
+
+    ev->timer_set = 1;
+    
 }
-
-
-
 
 
 #endif /*_TIMER_H_*/

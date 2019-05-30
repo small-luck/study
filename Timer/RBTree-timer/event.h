@@ -5,14 +5,18 @@
 
 typedef event_s event_t;
 
+typedef void (*event_handler_pt) (event_t *ev);
+
 struct event_s {
-    unsigned int fd;
+    unsigned int    fd;
 
-    unsigned int set;
+    unsigned int    timer_set;
 
-    unsigned int timeout;
+    unsigned int    timeout;
     
-    rbtree_node_t timer;
+    rbtree_node_t   timer; 
+
+    event_handler_pt handler;
 };
 
 
