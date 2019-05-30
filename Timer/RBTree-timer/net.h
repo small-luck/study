@@ -8,7 +8,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-
+#include <sys/epoll.h>
+#include <arpa/inet.h>
 
 #define PORT        8323
 #define IP          "127.0.0.1"
@@ -43,7 +44,7 @@ class Socket {
         int init_socket();
         int Bind();
         int Listen();
-        int Accept(struct sockaddr_in *cliaddr, socklen_t addrlen);
+        int Accept(struct sockaddr_in *cliaddr);
         
     private:
         int listen_fd;

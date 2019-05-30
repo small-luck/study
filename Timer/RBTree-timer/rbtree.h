@@ -1,6 +1,8 @@
 #ifndef _RBTREE_H_
 #define _RBTREE_H_
 
+#include <stdint.h>
+
 typedef int64_t rbtree_key_t;
 
 typedef struct rbtree_node_s rbtree_node_t;

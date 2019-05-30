@@ -1,8 +1,6 @@
 #include "net.h"
 
 #include <iostream>
-#include <sys/epoll.h>
-#include <arpa/inet.h>
 
 int Socket::init_socket()
 {
@@ -32,8 +30,9 @@ int Socket::Listen()
     return (listen(listen_fd, LISTEN_MAX));
 }
 
-int Socket::Accept(struct sockaddr_in * cliaddr, socklen_t addrlen)
+int Socket::Accept(struct sockaddr_in * cliaddr)
 {
+    socklen_t addrlen;
     return (accept(listen_fd, (struct sockaddr*)cliaddr, &addrlen));    
 }
 
