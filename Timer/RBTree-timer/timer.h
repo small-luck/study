@@ -15,18 +15,17 @@ int event_timer_init(void);
 uint64_t event_find_timer(void);
 void event_expire_timers(void);
 
-extern pthread_mutex_t *event_timer_mutex;
-
-
+extern pthread_mutex_t event_timer_mutex;
 extern rbtree_t event_timer_rbtree;
+
 
 static inline void
 event_del_timer(event_t *ev) {
     std::cout << "event del timer" << std::endl;
 
-    mutex_lock(event_timer_mutex);
+    do_mutex_lock(&event_timer_mutex);
     rbtree_delete(&event_timer_rbtree, &ev->timer);
-    mutex_unlock(event_timer_mutex);
+    do_mutex_unlock(&event_timer_mutex);
     
     ev->timer.left = NULL;
     ev->timer.right = NULL;
@@ -43,7 +42,6 @@ event_add_timer(event_t *ev, uint64_t timer)
     uint64_t now;
 
     now = get_current_msec();
-
     key = now + timer;
 
     if (ev->timer_set) {
@@ -55,7 +53,7 @@ event_add_timer(event_t *ev, uint64_t timer)
          */
 
         diff = key - ev->timer.key;
-        if (abs(diff) < TIMER_LAZY_DELAY) {
+        if (ABS(diff) < TIMER_LAZY_DELAY) {
             std::cout << "use previous timer" << std::endl;
             return;
         }
@@ -68,12 +66,11 @@ event_add_timer(event_t *ev, uint64_t timer)
     
     ev->timer.key = key;
 
-    mutex_lock(event_timer_mutex);
+    do_mutex_lock(&event_timer_mutex);
     rbtree_insert(&event_timer_rbtree, &ev->timer);
-    mutex_unlock(event_timer_mutex);
+    do_mutex_unlock(&event_timer_mutex);
 
     ev->timer_set = 1;
-    
 }
 
 

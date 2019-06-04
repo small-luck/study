@@ -1,5 +1,5 @@
 CXX = c++
-CXXFLAGS = -std=c++11 -g -W -Wall
+CXXFLAGS = -std=c++11 -g -W -Wall -lpthread
 INCLUDE = -I.
 
 OBJS := event.o net.o rbtree.o timer.o utils.o 

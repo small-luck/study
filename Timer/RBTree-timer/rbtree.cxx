@@ -1,4 +1,6 @@
 #include "rbtree.h"
+#include <iostream>
+#include <stdlib.h>
 
 static inline void 
 rbtree_left_rotate(rbtree_node_t **root, rbtree_node_t *sentinel,

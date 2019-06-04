@@ -1,45 +1,36 @@
 #include "utils.h"
 #include <iostream>
 #include <sys/time.h>
-#include <pthread.h>
 
-void mutex_init(pthread_mutex_t * mutex)
+void mutex_lock_init(pthread_mutex_t * mutex)
 {
     if (mutex != NULL) {
         return;
     }
 
-    mutex = mew pthread_mutex_t();
-
     pthread_mutex_init(mutex, NULL);
 
 }
 
-void mutex_destory(pthread_mutex_t * mutex)
+void mutex_lock_destory(pthread_mutex_t *  mutex)
 {
-    if (mutex == NULL)
-        return;
-
-    pthread_mutex_destory(mutex);
-
-    delete mutex;
-    mutex = NULL;
+    pthread_mutex_destroy(mutex);
 }
 
-int mutex_lock(pthread_mutex_t *mutex)
+int do_mutex_lock(pthread_mutex_t *mutex)
 {
     int ret;
-
+    
     ret = pthread_mutex_lock(mutex);
     if (ret != 0) {
         std::cout << "pthread_mutex_lock error: " << ret << std::endl;
         return -1;
     }
-
+    
     return 0;
 }
 
-int mutex_unlock(pthread_mutex_t *mutex)
+int do_mutex_unlock(pthread_mutex_t *mutex)
 {
     int ret;
 

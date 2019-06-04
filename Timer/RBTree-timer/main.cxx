@@ -1,16 +1,27 @@
 #include <iostream>
 #include "net.h"
 #include "timer.h"
+#include "event.h"
 
 #define MAX_EVENT   64
 #define TIMEOUT     10 * 1000
 
 
-void print(event_t ev)
+void print(event_t *ev)
 {
     int fd = ev->fd;
 
     std::cout << "client fd: " << fd << " is timeout" << std::endl;
+}
+
+
+void close_func(event_t *ev)
+{
+    int fd = ev->fd;
+
+    std::cout << "client fd: " << fd << " is timeout, need close fd" << std::endl;
+
+    close(fd);
 }
 
 int main(int argc, char* argv[])
@@ -62,13 +73,12 @@ int main(int argc, char* argv[])
     //register callback for fd,set a timer
     event_t ev;
     event_timer_init();
-    ev.fd = listenfd;
-    ev.handler = print;
+    event_init(&ev, listenfd, print);
     event_add_timer(&ev, TIMEOUT);
 
     while (1) {
         timer = event_find_timer();
-        std::cout << "Epoll_wait timer = " << timer << std::endl;
+        timer = (timer > 0 ? timer : 1000);
         n = epoll.Epoll_wait(events, MAX_EVENT, timer);
         if (n == 0) {
             std::cout << "Epoll_wait timeout!!!" << std::endl;
@@ -85,6 +95,10 @@ int main(int argc, char* argv[])
                     }
 
                     std::cout << "connect success! clientfd = " << clientfd << std::endl;
+
+                    event_t ev1;
+                    event_init(&ev1, clientfd, close_func);
+                    event_add_timer(&ev1, 5000);
                 } else {
                     //TODO
                 }
