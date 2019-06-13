@@ -6,6 +6,7 @@ class singleton {
         static singleton* get_instance() {
             if (instance == NULL) {
                 pthread_mutex_lock(&mutex);
+                instance = new singleton();
                 std::cout << "对象创建成功" << std::endl;
                 pthread_mutex_unlock(&mutex);
             } else {
@@ -14,13 +15,14 @@ class singleton {
             return instance;
         }
 
+        static pthread_mutex_t mutex;
+
     private:
         singleton() {
             pthread_mutex_init(&mutex, NULL);
             std::cout << "singleton()" << std::endl;
         }
-        static singleton* instance;
-        static pthread_mutex_t mutex;
+        static singleton* instance;        
 
         //创建一个内部类，实现释放申请的资源
         class GC {
@@ -32,15 +34,16 @@ class singleton {
                         instance = NULL;
                     }
                 }
-
-                static GC gc;   //用于释放单例
         };
+        static GC gc;   //定义静态成员变量，当程序结束时，系统自动调用析构函数
 };
 singleton* singleton::instance = NULL;
+pthread_mutex_t singleton::mutex;
 
 int main(int argc, char const *argv[])
 {
     singleton* p1 = singleton::get_instance();
     singleton* p2 = singleton::get_instance();
+
     return 0;
 }
