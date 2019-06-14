@@ -14,10 +14,46 @@
 */
 #include <iostream>
 
+class Product {
+	public:
+		virtual void show() = 0;
+};
 
+class Product_A : public Product {
+	public:
+		void show() {
+			std::cout << "Product_A" << std::endl;
+		}
+};
+
+class Product_B : public Product {
+	public:
+		void show() {
+			std::cout << "Product_B" << std::endl;
+		}
+};
+
+class Factory {
+	public:
+		Product* Create(int i) {
+			switch(i) {
+				case 1:
+					return new Product_A();
+					break;
+				case 2:
+					return new Product_B();
+					break;
+				default:
+					break;
+			}
+			return NULL;
+		}
+};
 
 int main(int argc, char const *argv[])
 {
-	
+	Factory *factory = new Factory();
+	factory->Create(1)->show();
+	factory->Create(2)->show();
 	return 0;
 }
