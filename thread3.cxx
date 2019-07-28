@@ -12,9 +12,9 @@ unsigned long gettid()
 
 void print()
 {     
-    while (count < 100) {
-        std::cout << "thread_id = " << gettid() << "; count= " << count << std::endl;
+    while (count < 3000) {
         ++count;
+        std::cout << "thread_id = " << gettid() << "; count= " << count << std::endl;
     }
 }
 
@@ -27,8 +27,11 @@ int main(int argc, char const * argv [ ])
     } 
 
 
-    for (int i = 0; i < 5; i++) {
-        threads[i]->join();
+    //for (int i = 0; i < 5; i++) {
+    //    threads[i]->join();
+    //}
+    while(1) {
+
     }
     return 0;
 }
